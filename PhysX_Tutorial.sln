@@ -17,6 +17,7 @@ Global
 		{41EF566D-EAAC-48C7-BB7E-B6E8CB6C4069}.Debug|Win32.Build.0 = Debug|Win32
 		{41EF566D-EAAC-48C7-BB7E-B6E8CB6C4069}.Debug|x64.ActiveCfg = Debug|x64
 		{41EF566D-EAAC-48C7-BB7E-B6E8CB6C4069}.Debug|x64.Build.0 = Debug|x64
+		{41EF566D-EAAC-48C7-BB7E-B6E8CB6C4069}.Debug|x64.Deploy.0 = Debug|x64
 		{41EF566D-EAAC-48C7-BB7E-B6E8CB6C4069}.Release|Win32.ActiveCfg = Release|Win32
 		{41EF566D-EAAC-48C7-BB7E-B6E8CB6C4069}.Release|Win32.Build.0 = Release|Win32
 		{41EF566D-EAAC-48C7-BB7E-B6E8CB6C4069}.Release|x64.ActiveCfg = Release|x64
@@ -24,5 +25,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

@@ -1,10 +1,15 @@
 #include "stdafx.h"
-#include <iostream>
+#include <vector>
 
 using namespace physx;
 
-const int WIDTH  = 800;
+#if 0
+const int WIDTH  = 1920;
+const int HEIGHT = 1080;
+#else
+const int WIDTH = 800;
 const int HEIGHT = 600;
+#endif
 
 static PxPhysics* g_physicsSDK = NULL;
 static PxDefaultErrorCallback g_defaultErrorCallback;
@@ -13,7 +18,7 @@ static PxSimulationFilterShader g_defaultFilterShader = PxDefaultSimulationFilte
 
 PxScene* g_scene = NULL;
 PxReal myTimestep = 1.0f / 60.0f;
-PxRigidActor *box;
+std::vector <PxRigidActor*> boxes;
 
 //for mouse dragging
 int oldX = 0, oldY = 0;
@@ -41,7 +46,7 @@ void ResetPerspectiveProjection(){
 	glMatrixMode(GL_MODELVIEW);
 }
 
-void RenderSpacedBitmapString(int x,int y,int spacing,void *font,char *string){
+void RenderSpacedBitmapString(int x, int y, int spacing, void *font, char *string){
 	char *c;
 	int x1 = x;
 	for (c = string; *c != '\0'; c++) {
@@ -91,11 +96,11 @@ void DrawAxes()
 	glPopMatrix();
 }
 
-void DrawGrid(int GRID_SIZE)
+void DrawGrid(int GRID_SIZE, int GRID_SPACING)
 {
 	glBegin(GL_LINES);
 	glColor3f(0.75f, 0.75f, 0.75f);
-	for (int i = -GRID_SIZE; i <= GRID_SIZE; i++)
+	for (int i = -GRID_SIZE; i <= GRID_SIZE; i+= GRID_SPACING)
 	{
 		glVertex3f((float)i, 0, (float)-GRID_SIZE);
 		glVertex3f((float)i, 0, (float)GRID_SIZE);
@@ -156,29 +161,34 @@ void InitPhysX() {
 
 	g_scene->addActor(*plane);
 
-	//2) Create cube  
+	//2) Create cubes  
 	PxReal density = 1.0f;
-	PxTransform transform(PxVec3(0.0f, 100.0f, 0.0f), PxQuat::createIdentity());
+	PxTransform transform(PxVec3(0.0f, 10.0f, 0.0f), PxQuat::createIdentity());
 	PxVec3 dimensions(0.5, 0.5, 0.5);
 	PxBoxGeometry geometry(dimensions);
 
-	PxRigidDynamic *actor = PxCreateDynamic(*g_physicsSDK, transform, geometry, *m_material, density);
-	actor->setAngularDamping(0.75);
-	actor->setLinearVelocity(PxVec3(0, 0, 0));
+	for (int i = 0; i<1000; i++) {
+		transform.p = PxVec3((PxReal)sin(i), 100.0f + i * 5, (PxReal)cos(i));
+		PxRigidDynamic *actor = PxCreateDynamic(*g_physicsSDK, transform, geometry, *m_material, density);
 
-	if (!actor)std::cerr << "create actor failed!" << std::endl;
+		if (!actor)	std::cerr << "PxCreateDynamic failed!" << std::endl;
 
-	g_scene->addActor(*actor);
-
-	box = actor;
+		actor->setAngularDamping(0.75);
+		actor->setLinearVelocity(PxVec3(0, 0, 0));
+		g_scene->addActor(*actor);
+		boxes.push_back(actor);
+	}
 
 	std::cout << "PhysX is Initialized" << std::endl;
 }
 
 void TerminatePhysX() {
-	g_scene->removeActor(*box);
+	for (PxRigidActor* box : boxes){
+		g_scene->removeActor(*box);
+		box->release();
+
+	}
 	g_scene->release();
-	box->release();
 	g_physicsSDK->release();
 	std::cout << "PhysX is Terminated" << std::endl;
 }
@@ -214,7 +224,7 @@ void OnReshape(int nw, int nh) {
 	glViewport(0, 0, nw, nh);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60, (GLfloat)nw / (GLfloat)nh, 0.1f, 100.0f);
+	gluPerspective(90, (GLfloat)nw / (GLfloat)nh, 0.1f, 10000.0f);
 	glMatrixMode(GL_MODELVIEW);
 }
 
@@ -278,7 +288,7 @@ void getColumnMajor(PxMat33 m, PxVec3 t, float* mat)
 	mat[15] = 1;
 }
 
-void DrawBox(PxShape* pShape) {
+void DrawBox(PxShape* pShape, PxRigidActor* box) {
 	PxTransform pT = PxShapeExt::getGlobalPose(*pShape, *box);
 	PxBoxGeometry bg;
 	pShape->getBoxGeometry(bg);
@@ -291,13 +301,13 @@ void DrawBox(PxShape* pShape) {
 	glPopMatrix();
 }
 
-void DrawShape(PxShape* shape)
+void DrawShape(PxShape* shape, PxRigidActor* actor)
 {
 	PxGeometryType::Enum type = shape->getGeometryType();
 	switch (type)
 	{
 	case PxGeometryType::eBOX:
-		DrawBox(shape);
+		DrawBox(shape, actor);
 		break;
 	}
 }
@@ -310,7 +320,7 @@ void DrawActor(PxRigidActor* actor)
 	actor->getShapes(shapes, nShapes);
 	while (nShapes--)
 	{
-		DrawShape(shapes[nShapes]);
+		DrawShape(shapes[nShapes], actor);
 	}
 	delete[] shapes;
 }
@@ -318,7 +328,7 @@ void DrawActor(PxRigidActor* actor)
 void RenderActors()
 {
 	// Render all the actors in the scene 
-	DrawActor(box);
+	for (PxRigidActor* box: boxes)DrawActor(box);
 }
 
 char buffer[MAX_PATH];
@@ -351,7 +361,7 @@ void OnRender() {
 
 	//Draw the grid and axes
 	DrawAxes();
-	DrawGrid(100);
+	DrawGrid(1000, 10);
 
 	glEnable(GL_LIGHTING);
 	RenderActors();
@@ -360,7 +370,7 @@ void OnRender() {
 	SetOrthoForFont();
 	glColor3f(1, 1, 1);
 	//Show the fps
-	RenderSpacedBitmapString(20, 20, 0, GLUT_BITMAP_HELVETICA_12, buffer);
+	RenderSpacedBitmapString(20, 20, 0, GLUT_BITMAP_HELVETICA_18, buffer);
 
 	ResetPerspectiveProjection();
 

@@ -9,6 +9,7 @@
 #include<extensions/PxShapeExt.h>
 #include<extensions/PxSimpleFactory.h>
 #include<foundation/PxMat33.h>
+#include <cmath>
 
 
 
